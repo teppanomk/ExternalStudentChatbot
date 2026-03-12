@@ -15,7 +15,7 @@ box-shadow:0 0 10px rgba(0,0,0,0.1);
 }
 
 #chat{
-height:400px;
+height:420px;
 overflow-y:auto;
 border:1px solid #ddd;
 padding:10px;
@@ -24,8 +24,8 @@ margin-bottom:10px;
 
 .message{
 margin:8px 0;
-padding:8px;
-border-radius:6px;
+padding:10px;
+border-radius:8px;
 max-width:80%;
 }
 
