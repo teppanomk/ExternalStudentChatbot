@@ -1,6 +1,6 @@
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfUYEYX8MIGIYW5hTWf2hz_j0VT7TBiZlAWkB183PuT25msmPFtizLvmD9ktXgV4aMj2e8E6IACs6U/pub?gid=0&single=true&output=csv";
 
-const API_KEY = "YOUR_API_KEY";
+const API_KEY = "AIzaSyCSlfy9UVQIci-CR40m1RzVUj8-DGmXpLg";
 
 let knowledgeBase = [];
 
@@ -9,27 +9,25 @@ async function loadSheetData(){
 const res = await fetch(sheetURL);
 const csv = await res.text();
 
-const rows = csv.split("\n").slice(1);
-
-knowledgeBase = rows.map(row => {
-
-const cols = row.split(",");
-
-return {
-question: cols[0],
-answer: cols[1],
-category: cols[2],
-intent: cols[3]
-};
-
+const parsed = Papa.parse(csv,{
+header:true,
+skipEmptyLines:true
 });
+
+knowledgeBase = parsed.data.map(row => ({
+question: row["User Question"],
+answer: row["Bot Answer"],
+category: row["Category"],
+intent: row["Intent"]
+}));
 
 }
 
 loadSheetData();
 
 
-function addMessage(text, sender){
+
+function addMessage(text,sender){
 
 const chat = document.getElementById("chat");
 
@@ -46,6 +44,7 @@ chat.scrollTop = chat.scrollHeight;
 }
 
 
+
 function findFromSheet(userMessage){
 
 userMessage = userMessage.toLowerCase();
@@ -53,7 +52,9 @@ userMessage = userMessage.toLowerCase();
 for(const item of knowledgeBase){
 
 if(item.question && userMessage.includes(item.question.toLowerCase())){
+
 return item.answer;
+
 }
 
 }
@@ -61,6 +62,7 @@ return item.answer;
 return null;
 
 }
+
 
 
 async function askGemini(question){
@@ -85,9 +87,11 @@ parts:[
 
 const data = await response.json();
 
-return data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't find an answer.";
+return data?.candidates?.[0]?.content?.parts?.[0]?.text
+|| "Sorry, I couldn't find an answer.";
 
 }
+
 
 
 async function sendMessage(){
@@ -103,6 +107,8 @@ addMessage(message,"user");
 input.value="";
 input.focus();
 
+
+
 let sheetAnswer = findFromSheet(message);
 
 if(sheetAnswer){
@@ -112,6 +118,8 @@ return;
 
 }
 
+
+
 const geminiReply = await askGemini(message);
 
 addMessage(geminiReply,"bot");
@@ -120,7 +128,7 @@ addMessage(geminiReply,"bot");
 
 
 
-document.getElementById("userInput").addEventListener("keypress", function(event){
+document.getElementById("userInput").addEventListener("keypress",function(event){
 
 if(event.key === "Enter"){
 
