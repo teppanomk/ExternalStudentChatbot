@@ -1,6 +1,6 @@
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfUYEYX8MIGIYW5hTWf2hz_j0VT7TBiZlAWkB183PuT25msmPFtizLvmD9ktXgV4aMj2e8E6IACs6U/pub?gid=0&single=true&output=csv";
 
-const API_KEY = "AIzaSyCSlfy9UVQIci-CR40m1RzVUj8-DGmXpLg";
+const API_KEY = "YOUR_API_KEY";
 
 let knowledgeBase = [];
 
