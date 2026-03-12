@@ -1,52 +1,108 @@
-body{
-font-family: Arial;
-background:#f4f4f4;
-display:flex;
-justify-content:center;
-margin-top:40px;
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfUYEYX8MIGIYW5hTWf2hz_j0VT7TBiZlAWkB183PuT25msmPFtizLvmD9ktXgV4aMj2e8E6IACs6U/pub?gid=0&single=true&output=csv";
+
+const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY";
+
+let knowledgeBase = [];
+
+async function loadSheetData() {
+
+const res = await fetch(sheetURL);
+const data = await res.text();
+
+const rows = data.split("\n").slice(1);
+
+knowledgeBase = rows.map(row => {
+
+const cols = row.split(",");
+
+return {
+question: cols[0],
+answer: cols[1],
+category: cols[2],
+intent: cols[3]
+};
+
+});
+
 }
 
-.chat-container{
-width:420px;
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.1);
+loadSheetData();
+
+function addMessage(text, sender){
+
+const chat = document.getElementById("chat");
+
+const div = document.createElement("div");
+
+div.className = "message " + sender;
+
+div.innerText = text;
+
+chat.appendChild(div);
+
+chat.scrollTop = chat.scrollHeight;
+
 }
 
-#chat{
-height:400px;
-overflow-y:auto;
-border:1px solid #ddd;
-padding:10px;
-margin-bottom:10px;
+async function sendMessage(){
+
+const input = document.getElementById("userInput");
+
+const message = input.value;
+
+if(!message) return;
+
+addMessage(message,"user");
+
+input.value="";
+
+let sheetAnswer = findFromSheet(message);
+
+if(sheetAnswer){
+addMessage(sheetAnswer,"bot");
+return;
 }
 
-.message{
-margin:8px 0;
+const geminiReply = await askGemini(message);
+
+addMessage(geminiReply,"bot");
+
 }
 
-.user{
-text-align:right;
-color:#007bff;
+function findFromSheet(userMessage){
+
+userMessage = userMessage.toLowerCase();
+
+for(const item of knowledgeBase){
+
+if(userMessage.includes(item.question.toLowerCase())){
+return item.answer;
 }
 
-.bot{
-text-align:left;
-color:#333;
 }
 
-.input-area{
-display:flex;
-gap:10px;
+return null;
+
 }
 
-input{
-flex:1;
-padding:8px;
-}
+async function askGemini(question){
 
-button{
-padding:8px 12px;
-cursor:pointer;
+const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+
+const response = await fetch(url,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+contents:[{
+parts:[{text:question}]
+}]
+})
+});
+
+const data = await response.json();
+
+return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't answer.";
+
 }
