@@ -2,7 +2,7 @@ const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfUYEYX8MIGIY
 
 const GEMINI_API_KEY = "AIzaSyCSlfy9UVQIci-CR40m1RzVUj8-DGmXpLg";
 
-const LOG_API = "https://script.google.com/macros/s/AKfycbzHTUExbUZl9yBTJnR0BidveyXP_-JPYC5Q0Zi-oQZq7ttXI8wAwDhLKrMDgzSZkWNyjg/exec";
+const LOG_API = "https://script.google.com/macros/s/AKfycbwtkFIetxjbb2bfqVpcB9cK4Zt_s7XXqnf2qNRQdvyYYHd79U8RoO044o_cQebkQ3w_Tg/exec";
 
 let knowledgeBase = [];
 
