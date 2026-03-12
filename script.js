@@ -2,14 +2,15 @@ const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfUYEYX8MIGIY
 
 const GEMINI_API_KEY = "AIzaSyCSlfy9UVQIci-CR40m1RzVUj8-DGmXpLg";
 
-const LOG_API = "https://script.google.com/macros/s/AKfycbwtkFIetxjbb2bfqVpcB9cK4Zt_s7XXqnf2qNRQdvyYYHd79U8RoO044o_cQebkQ3w_Tg/exec";
+const LOG_API = "https://script.google.com/macros/s/AKfycbw6gZzk74VbEPSQGsuosDlecUobyNV4VL74yKA9M8ltOiD1wIxNfM2nWAFVPioSimnfzg/exec";
 
 let knowledgeBase = [];
 
 async function loadSheetData(){
 
-const response = await fetch(sheetURL);
-const csv = await response.text();
+const res = await fetch(sheetURL);
+
+const csv = await res.text();
 
 const parsed = Papa.parse(csv,{
 header:true,
@@ -24,7 +25,7 @@ loadSheetData();
 
 
 
-function addMessage(text, sender){
+function addMessage(text,sender){
 
 const chat = document.getElementById("chat");
 
@@ -86,14 +87,14 @@ parts:[
 
 const data = await response.json();
 
-return data?.candidates?.[0]?.content?.parts?.[0]?.text 
-|| "Sorry, I could not find an answer.";
+return data?.candidates?.[0]?.content?.parts?.[0]?.text
+|| "Sorry, I couldn't find an answer.";
 
 }
 
 
 
-async function logQuestion(question, found, answer){
+async function logQuestion(question,found,answer){
 
 try{
 
@@ -111,7 +112,7 @@ answer:answer
 
 }catch(err){
 
-console.log("Log error:",err);
+console.log(err);
 
 }
 
@@ -130,7 +131,6 @@ if(!message) return;
 addMessage(message,"user");
 
 input.value="";
-input.focus();
 
 
 
@@ -158,11 +158,11 @@ logQuestion(message,"No",aiAnswer);
 
 
 
-document.getElementById("userInput").addEventListener("keypress",function(event){
+document.getElementById("userInput").addEventListener("keypress",function(e){
 
-if(event.key==="Enter"){
+if(e.key==="Enter"){
 
-event.preventDefault();
+e.preventDefault();
 
 sendMessage();
 
