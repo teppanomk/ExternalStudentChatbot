@@ -2,15 +2,15 @@ const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfUYEYX8MIGIY
 
 const GEMINI_API_KEY = "AIzaSyCSlfy9UVQIci-CR40m1RzVUj8-DGmXpLg";
 
-const LOG_API = "https://script.google.com/macros/s/AKfycbw6gZzk74VbEPSQGsuosDlecUobyNV4VL74yKA9M8ltOiD1wIxNfM2nWAFVPioSimnfzg/exec";
+const LOG_API = "https://script.google.com/macros/s/AKfycbze3yVdySjDVy2MOi9SuZgzAOGe09VMx5d8RruXMemn7_IdG8B7LLDLOPDa1ApNvDmvvQ/exec";
 
 let knowledgeBase = [];
 
 async function loadSheetData(){
 
-const res = await fetch(sheetURL);
+const response = await fetch(sheetURL);
 
-const csv = await res.text();
+const csv = await response.text();
 
 const parsed = Papa.parse(csv,{
 header:true,
@@ -54,7 +54,9 @@ if(!row["User Question"]) continue;
 const q = row["User Question"].toLowerCase();
 
 if(question.includes(q) || q.includes(question)){
+
 return row["Bot Answer"];
+
 }
 
 }
@@ -100,6 +102,7 @@ try{
 
 await fetch(LOG_API,{
 method:"POST",
+mode:"no-cors",
 headers:{
 "Content-Type":"application/json"
 },
@@ -110,9 +113,9 @@ answer:answer
 })
 });
 
-}catch(err){
+}catch(error){
 
-console.log(err);
+console.log("Logging error:",error);
 
 }
 
@@ -131,6 +134,7 @@ if(!message) return;
 addMessage(message,"user");
 
 input.value="";
+input.focus();
 
 
 
@@ -158,11 +162,11 @@ logQuestion(message,"No",aiAnswer);
 
 
 
-document.getElementById("userInput").addEventListener("keypress",function(e){
+document.getElementById("userInput").addEventListener("keypress",function(event){
 
-if(e.key==="Enter"){
+if(event.key==="Enter"){
 
-e.preventDefault();
+event.preventDefault();
 
 sendMessage();
 
