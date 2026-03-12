@@ -2,6 +2,8 @@ const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfUYEYX8MIGIY
 
 const API_KEY = "AIzaSyCSlfy9UVQIci-CR40m1RzVUj8-DGmXpLg";
 
+const LOG_API = "https://script.google.com/macros/s/AKfycbxC4sZPku_zGQaWBM66IKghIwQVAPt7CpDvpLNe1pfscGaNuazE_9Yu7FgJpHrGgGqCFA/exec";
+
 let knowledgeBase = [];
 
 let embeddings = [];
@@ -29,7 +31,7 @@ loadSheetData();
 
 async function createEmbeddings(){
 
-embeddings = [];
+embeddings=[];
 
 for(const row of knowledgeBase){
 
@@ -38,8 +40,8 @@ if(!row["User Question"]) continue;
 const emb = await getEmbedding(row["User Question"]);
 
 embeddings.push({
-vector: emb,
-answer: row["Bot Answer"]
+vector:emb,
+answer:row["Bot Answer"]
 });
 
 }
@@ -81,9 +83,7 @@ let normB=0;
 for(let i=0;i<a.length;i++){
 
 dot+=a[i]*b[i];
-
 normA+=a[i]*a[i];
-
 normB+=b[i]*b[i];
 
 }
@@ -94,12 +94,12 @@ return dot/(Math.sqrt(normA)*Math.sqrt(normB));
 
 
 
-async function searchKnowledge(userQuestion){
+async function searchKnowledge(question){
 
-const userEmbedding = await getEmbedding(userQuestion);
+const userEmbedding = await getEmbedding(question);
 
-let bestScore = 0;
-let bestAnswer = null;
+let bestScore=0;
+let bestAnswer=null;
 
 for(const item of embeddings){
 
@@ -115,7 +115,9 @@ bestAnswer=item.answer;
 }
 
 if(bestScore>0.80){
+
 return bestAnswer;
+
 }
 
 return null;
@@ -126,9 +128,9 @@ return null;
 
 function addMessage(text,sender){
 
-const chat = document.getElementById("chat");
+const chat=document.getElementById("chat");
 
-const div = document.createElement("div");
+const div=document.createElement("div");
 
 div.className="message "+sender;
 
@@ -160,7 +162,7 @@ parts:[{text:question}]
 })
 });
 
-const data = await response.json();
+const data=await response.json();
 
 return data?.candidates?.[0]?.content?.parts?.[0]?.text
 || "Sorry, I couldn't find an answer.";
@@ -169,11 +171,29 @@ return data?.candidates?.[0]?.content?.parts?.[0]?.text
 
 
 
+async function logQuestion(question,found,answer){
+
+await fetch(LOG_API,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+question:question,
+found:found,
+answer:answer
+})
+});
+
+}
+
+
+
 async function sendMessage(){
 
-const input = document.getElementById("userInput");
+const input=document.getElementById("userInput");
 
-const message = input.value.trim();
+const message=input.value.trim();
 
 if(!message) return;
 
@@ -189,6 +209,9 @@ const sheetAnswer = await searchKnowledge(message);
 if(sheetAnswer){
 
 addMessage(sheetAnswer,"bot");
+
+logQuestion(message,"Yes",sheetAnswer);
+
 return;
 
 }
@@ -198,6 +221,8 @@ return;
 const aiAnswer = await askGemini(message);
 
 addMessage(aiAnswer,"bot");
+
+logQuestion(message,"No",aiAnswer);
 
 }
 
