@@ -1,6 +1,6 @@
 body{
-font-family: Arial;
-background:#f4f4f4;
+font-family: Arial, sans-serif;
+background:#f2f2f2;
 display:flex;
 justify-content:center;
 margin-top:40px;
@@ -24,29 +24,25 @@ margin-bottom:10px;
 
 .message{
 margin:8px 0;
+padding:8px;
+border-radius:6px;
+max-width:80%;
 }
 
 .user{
+background:#d9ecff;
+margin-left:auto;
 text-align:right;
-color:#007bff;
 }
 
 .bot{
-text-align:left;
-color:#333;
+background:#eee;
+margin-right:auto;
 }
 
-.input-area{
-display:flex;
-gap:10px;
-}
-
-input{
-flex:1;
-padding:8px;
-}
-
-button{
-padding:8px 12px;
-cursor:pointer;
+#userInput{
+width:100%;
+padding:10px;
+border:1px solid #ccc;
+border-radius:5px;
 }
