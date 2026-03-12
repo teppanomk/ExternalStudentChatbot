@@ -4,9 +4,12 @@ const API_KEY = "AIzaSyCSlfy9UVQIci-CR40m1RzVUj8-DGmXpLg";
 
 let knowledgeBase = [];
 
+let embeddings = [];
+
 async function loadSheetData(){
 
 const res = await fetch(sheetURL);
+
 const csv = await res.text();
 
 const parsed = Papa.parse(csv,{
@@ -14,16 +17,110 @@ header:true,
 skipEmptyLines:true
 });
 
-knowledgeBase = parsed.data.map(row => ({
-question: row["User Question"],
-answer: row["Bot Answer"],
-category: row["Category"],
-intent: row["Intent"]
-}));
+knowledgeBase = parsed.data;
+
+await createEmbeddings();
 
 }
 
 loadSheetData();
+
+
+
+async function createEmbeddings(){
+
+embeddings = [];
+
+for(const row of knowledgeBase){
+
+if(!row["User Question"]) continue;
+
+const emb = await getEmbedding(row["User Question"]);
+
+embeddings.push({
+vector: emb,
+answer: row["Bot Answer"]
+});
+
+}
+
+}
+
+
+
+async function getEmbedding(text){
+
+const response = await fetch(
+`https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent?key=${API_KEY}`,
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+content:{
+parts:[{text:text}]
+}
+})
+});
+
+const data = await response.json();
+
+return data.embedding.values;
+
+}
+
+
+
+function cosineSimilarity(a,b){
+
+let dot=0;
+let normA=0;
+let normB=0;
+
+for(let i=0;i<a.length;i++){
+
+dot+=a[i]*b[i];
+
+normA+=a[i]*a[i];
+
+normB+=b[i]*b[i];
+
+}
+
+return dot/(Math.sqrt(normA)*Math.sqrt(normB));
+
+}
+
+
+
+async function searchKnowledge(userQuestion){
+
+const userEmbedding = await getEmbedding(userQuestion);
+
+let bestScore = 0;
+let bestAnswer = null;
+
+for(const item of embeddings){
+
+const score = cosineSimilarity(userEmbedding,item.vector);
+
+if(score>bestScore){
+
+bestScore=score;
+bestAnswer=item.answer;
+
+}
+
+}
+
+if(bestScore>0.80){
+return bestAnswer;
+}
+
+return null;
+
+}
 
 
 
@@ -33,33 +130,13 @@ const chat = document.getElementById("chat");
 
 const div = document.createElement("div");
 
-div.className = "message " + sender;
+div.className="message "+sender;
 
-div.innerText = text;
+div.innerText=text;
 
 chat.appendChild(div);
 
-chat.scrollTop = chat.scrollHeight;
-
-}
-
-
-
-function findFromSheet(userMessage){
-
-userMessage = userMessage.toLowerCase();
-
-for(const item of knowledgeBase){
-
-if(item.question && userMessage.includes(item.question.toLowerCase())){
-
-return item.answer;
-
-}
-
-}
-
-return null;
+chat.scrollTop=chat.scrollHeight;
 
 }
 
@@ -77,9 +154,7 @@ headers:{
 body:JSON.stringify({
 contents:[
 {
-parts:[
-{ text: question }
-]
+parts:[{text:question}]
 }
 ]
 })
@@ -109,7 +184,7 @@ input.focus();
 
 
 
-let sheetAnswer = findFromSheet(message);
+const sheetAnswer = await searchKnowledge(message);
 
 if(sheetAnswer){
 
@@ -120,9 +195,9 @@ return;
 
 
 
-const geminiReply = await askGemini(message);
+const aiAnswer = await askGemini(message);
 
-addMessage(geminiReply,"bot");
+addMessage(aiAnswer,"bot");
 
 }
 
@@ -130,7 +205,7 @@ addMessage(geminiReply,"bot");
 
 document.getElementById("userInput").addEventListener("keypress",function(event){
 
-if(event.key === "Enter"){
+if(event.key==="Enter"){
 
 event.preventDefault();
 
