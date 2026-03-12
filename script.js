@@ -1,18 +1,15 @@
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfUYEYX8MIGIYW5hTWf2hz_j0VT7TBiZlAWkB183PuT25msmPFtizLvmD9ktXgV4aMj2e8E6IACs6U/pub?gid=0&single=true&output=csv";
 
-const API_KEY = "AIzaSyCSlfy9UVQIci-CR40m1RzVUj8-DGmXpLg";
+const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY";
 
-const LOG_API = "https://script.google.com/macros/s/AKfycbxC4sZPku_zGQaWBM66IKghIwQVAPt7CpDvpLNe1pfscGaNuazE_9Yu7FgJpHrGgGqCFA/exec";
+const LOG_API = "YOUR_LOG_API_URL";
 
 let knowledgeBase = [];
 
-let embeddings = [];
-
 async function loadSheetData(){
 
-const res = await fetch(sheetURL);
-
-const csv = await res.text();
+const response = await fetch(sheetURL);
+const csv = await response.text();
 
 const parsed = Papa.parse(csv,{
 header:true,
@@ -21,102 +18,43 @@ skipEmptyLines:true
 
 knowledgeBase = parsed.data;
 
-await createEmbeddings();
-
 }
 
 loadSheetData();
 
 
 
-async function createEmbeddings(){
+function addMessage(text, sender){
 
-embeddings=[];
+const chat = document.getElementById("chat");
+
+const div = document.createElement("div");
+
+div.className = "message " + sender;
+
+div.innerText = text;
+
+chat.appendChild(div);
+
+chat.scrollTop = chat.scrollHeight;
+
+}
+
+
+
+function searchSheet(question){
+
+question = question.toLowerCase();
 
 for(const row of knowledgeBase){
 
 if(!row["User Question"]) continue;
 
-const emb = await getEmbedding(row["User Question"]);
+const q = row["User Question"].toLowerCase();
 
-embeddings.push({
-vector:emb,
-answer:row["Bot Answer"]
-});
-
+if(question.includes(q) || q.includes(question)){
+return row["Bot Answer"];
 }
-
-}
-
-
-
-async function getEmbedding(text){
-
-const response = await fetch(
-`https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent?key=${API_KEY}`,
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-content:{
-parts:[{text:text}]
-}
-})
-});
-
-const data = await response.json();
-
-return data.embedding.values;
-
-}
-
-
-
-function cosineSimilarity(a,b){
-
-let dot=0;
-let normA=0;
-let normB=0;
-
-for(let i=0;i<a.length;i++){
-
-dot+=a[i]*b[i];
-normA+=a[i]*a[i];
-normB+=b[i]*b[i];
-
-}
-
-return dot/(Math.sqrt(normA)*Math.sqrt(normB));
-
-}
-
-
-
-async function searchKnowledge(question){
-
-const userEmbedding = await getEmbedding(question);
-
-let bestScore=0;
-let bestAnswer=null;
-
-for(const item of embeddings){
-
-const score = cosineSimilarity(userEmbedding,item.vector);
-
-if(score>bestScore){
-
-bestScore=score;
-bestAnswer=item.answer;
-
-}
-
-}
-
-if(bestScore>0.80){
-
-return bestAnswer;
 
 }
 
@@ -126,28 +64,10 @@ return null;
 
 
 
-function addMessage(text,sender){
-
-const chat=document.getElementById("chat");
-
-const div=document.createElement("div");
-
-div.className="message "+sender;
-
-div.innerText=text;
-
-chat.appendChild(div);
-
-chat.scrollTop=chat.scrollHeight;
-
-}
-
-
-
 async function askGemini(question){
 
 const response = await fetch(
-`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
 {
 method:"POST",
 headers:{
@@ -156,22 +76,26 @@ headers:{
 body:JSON.stringify({
 contents:[
 {
-parts:[{text:question}]
+parts:[
+{ text:question }
+]
 }
 ]
 })
 });
 
-const data=await response.json();
+const data = await response.json();
 
-return data?.candidates?.[0]?.content?.parts?.[0]?.text
-|| "Sorry, I couldn't find an answer.";
+return data?.candidates?.[0]?.content?.parts?.[0]?.text 
+|| "Sorry, I could not find an answer.";
 
 }
 
 
 
-async function logQuestion(question,found,answer){
+async function logQuestion(question, found, answer){
+
+try{
 
 await fetch(LOG_API,{
 method:"POST",
@@ -185,15 +109,21 @@ answer:answer
 })
 });
 
+}catch(err){
+
+console.log("Log error:",err);
+
+}
+
 }
 
 
 
 async function sendMessage(){
 
-const input=document.getElementById("userInput");
+const input = document.getElementById("userInput");
 
-const message=input.value.trim();
+const message = input.value.trim();
 
 if(!message) return;
 
@@ -204,7 +134,7 @@ input.focus();
 
 
 
-const sheetAnswer = await searchKnowledge(message);
+let sheetAnswer = searchSheet(message);
 
 if(sheetAnswer){
 
@@ -218,7 +148,7 @@ return;
 
 
 
-const aiAnswer = await askGemini(message);
+let aiAnswer = await askGemini(message);
 
 addMessage(aiAnswer,"bot");
 
