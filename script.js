@@ -172,7 +172,7 @@ sendMessage();
 
 }
 
-
+});
 // Dark mode toggle
 
 const toggleBtn = document.getElementById("darkToggle");
